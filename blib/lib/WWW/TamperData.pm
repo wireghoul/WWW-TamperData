@@ -4,6 +4,7 @@ use warnings;
 use strict;
 use Carp;
 use XML::Simple;
+use HTTP::Request;
 use LWP::UserAgent;
 
 =head1 NAME
@@ -12,12 +13,12 @@ WWW::TamperData - Replay tamper data xml files
 
 =head1 VERSION
 
-Version 0.08
+Version 0.09
 
 =cut
 
 # Globals
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 our $AUTHOR = 'Eldar Marcussen - http://www.justanotherhacker.com';
 our $_tamperagent;
 our $_tamperxml;
@@ -85,12 +86,13 @@ sub replay {
             }
         }
     } else {
-        $_tamperxml->{tdRequest}->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-        my $request = HTTP::Request->new($_tamperxml->{tdRequest}->{tdRequestMethod} => "$_tamperxml->{tdRequest}->{uri}");
-        my $response = $_tamperagent->get($request);
-        if (!$response->is_success) {
-            croak $response->status_line;
-        }
+        #$_tamperxml->{tdRequest}->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+        #my $request = HTTP::Request->new($_tamperxml->{tdRequest}->{tdRequestMethod} => "$_tamperxml->{tdRequest}->{uri}");
+        #my $response = $_tamperagent->get($request);
+        #if (!$response->is_success) {
+        #    croak $response->status_line;
+        #}
+        $self->_make_request($_tamperxml->{tdRequest});
     }
 }
 
@@ -118,6 +120,16 @@ sub response_filter {
     $self->{request_filter} = $caller.$callback;
 }
 
+sub _make_request {
+    my ($self, $uriobj) = @_;
+    $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+    my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
+    my $response = $_tamperagent->get($request);
+    if (!$response->is_success) {
+        croak $response->status_line;
+    }
+    return $response;
+}
 =head1 AUTHOR
 
 Eldar Marcussen, C<< <japh at justanotherhacker.com> >>
