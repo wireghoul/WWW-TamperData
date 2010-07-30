@@ -78,12 +78,14 @@ sub replay {
     my $self = shift;
     if (ref($_tamperxml->{tdRequest}) eq 'ARRAY') {
         for my $x (0..scalar($_tamperxml->{tdRequest})) {
-            $_tamperxml->{tdRequest}->[$x]->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-            my $request = HTTP::Request->new($_tamperxml->{tdRequest}->[$x]->{tdRequestMethod} => "$_tamperxml->{tdRequest}->[$x]->{uri}");
-            my $response = $_tamperagent->get($request);
-            if (!$response->is_success) {
-                croak $response->status_line;
-            }
+        #    $_tamperxml->{tdRequest}->[$x]->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+        #    my $request = HTTP::Request->new($_tamperxml->{tdRequest}->[$x]->{tdRequestMethod} => "$_tamperxml->{tdRequest}->[$x]->{uri}");
+        #    my $response = $_tamperagent->get($request);
+        #    if (!$response->is_success) {
+        #        croak $response->status_line;
+        #    }
+        $self->_make_request($_tamperxml->{tdRequest}->[$x]);
+
         }
     } else {
         #$_tamperxml->{tdRequest}->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
@@ -94,6 +96,7 @@ sub replay {
         #}
         $self->_make_request($_tamperxml->{tdRequest});
     }
+    return 1;
 }
 
 =head2 request_filter
@@ -123,8 +126,10 @@ sub response_filter {
 sub _make_request {
     my ($self, $uriobj) = @_;
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+    my $str = $uriobj->{uri};
+    print "$str\n";
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
-    my $response = $_tamperagent->get($request);
+    my $response = $_tamperagent->request($request);
     if (!$response->is_success) {
         croak $response->status_line;
     }
