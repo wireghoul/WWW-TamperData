@@ -18,7 +18,7 @@ Version 0.09
 =cut
 
 # Globals
-our $VERSION = '0.09';
+our $VERSION = '0.1';
 our $AUTHOR = 'Eldar Marcussen - http://www.justanotherhacker.com';
 our $_tamperagent;
 our $_tamperxml;
@@ -126,9 +126,10 @@ sub response_filter {
 sub _make_request {
     my ($self, $uriobj) = @_;
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-    my $str = $uriobj->{uri};
-    print "$str\n";
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
+    foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}->{tdRequestHeader} } )) {
+        $request->push_header($header => $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content});
+    }
     my $response = $_tamperagent->request($request);
     if (!$response->is_success) {
         croak $response->status_line;

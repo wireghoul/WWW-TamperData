@@ -6,6 +6,7 @@ use Carp;
 use XML::Simple;
 use HTTP::Request;
 use LWP::UserAgent;
+use Data::Dumper;
 
 =head1 NAME
 
@@ -126,9 +127,12 @@ sub response_filter {
 sub _make_request {
     my ($self, $uriobj) = @_;
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-    my $str = $uriobj->{uri};
-    print "$str\n";
+    #warn Dumper($uriobj);
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
+    foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}->{tdRequestHeader} } )) {
+        $request->push_header($header => $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content});
+    }
+    warn Dumper($request);
     my $response = $_tamperagent->request($request);
     if (!$response->is_success) {
         croak $response->status_line;
