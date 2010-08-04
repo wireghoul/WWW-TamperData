@@ -118,8 +118,8 @@ Callback function that allows inspection of the response object.
 
 sub response_filter {
     my ($self, $callback) = @_;
-    #$self->{response_filter}->{module} = caller;
-    #$self->{response_filter}->{sub} = $callback;
+    $self->{response_filter}->{module} = caller;
+    $self->{response_filter}->{function} = $callback;
 }
 
 sub _make_request {
@@ -135,8 +135,7 @@ sub _make_request {
     }
     my $response = $_tamperagent->request($request);
     if ($self->{response_filter}) {
-        # Todo: fix code ref
-        #&$self->{response_filter}($response);
+        eval "$self->{response_filter}->{module}::$self->{response_filter}->{function}(\$uriobj);";
     }
     if (!$response->is_success) {
         croak $response->status_line;
