@@ -1,12 +1,11 @@
 package WWW::TamperData;
 
 use warnings;
-use strict;
+#use strict;
 use Carp;
 use XML::Simple;
 use HTTP::Request;
 use LWP::UserAgent;
-use Data::Dumper;
 
 =head1 NAME
 
@@ -19,7 +18,7 @@ Version 0.09
 =cut
 
 # Globals
-our $VERSION = '0.09';
+our $VERSION = '0.1';
 our $AUTHOR = 'Eldar Marcussen - http://www.justanotherhacker.com';
 our $_tamperagent;
 our $_tamperxml;
@@ -97,7 +96,6 @@ sub replay {
         #}
         $self->_make_request($_tamperxml->{tdRequest});
     }
-    return 1;
 }
 
 =head2 request_filter
@@ -108,8 +106,8 @@ Callback function that allows inspection/tampering of the uri and parameters bef
 
 sub request_filter {
     my ($self, $callback) = @_;
-    my ($caller) = caller;
-    $self->{request_filter} = $caller.$callback;
+    $self->{request_filter}->{module} = caller;
+    $self->{request_filter}->{function} = $callback;
 }
 
 =head2 response_filter
@@ -120,20 +118,26 @@ Callback function that allows inspection of the response object.
 
 sub response_filter {
     my ($self, $callback) = @_;
-    my ($caller) = caller;
-    $self->{request_filter} = $caller.$callback;
+    #$self->{response_filter}->{module} = caller;
+    #$self->{response_filter}->{sub} = $callback;
 }
 
 sub _make_request {
     my ($self, $uriobj) = @_;
+    if ($self->{request_filter}) {
+        eval "$self->{request_filter}->{module}::$self->{request_filter}->{function}(\$uriobj);";
+    }
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-    #warn Dumper($uriobj);
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
     foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}->{tdRequestHeader} } )) {
+        $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
         $request->push_header($header => $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content});
     }
-    warn Dumper($request);
     my $response = $_tamperagent->request($request);
+    if ($self->{response_filter}) {
+        # Todo: fix code ref
+        #&$self->{response_filter}($response);
+    }
     if (!$response->is_success) {
         croak $response->status_line;
     }
