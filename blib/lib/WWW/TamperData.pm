@@ -47,8 +47,10 @@ Initializes the new object, it takes some options;
 
     KEY             DEFAULT                 USE
     -------         -----------------       ------------------------------------
-    transcript      tamperdata.xml          Filename to read tamperdata xml from
+    transcript      undef                   Filename to read tamperdata xml from
     timeout         60                      LWP connection timeout
+    requestfilter   undef                   Name of function to call before making the request
+    responsefilter  undef                   Name of function to call after making the request
 
 =back
 
@@ -58,10 +60,23 @@ sub new {
     my ($class, %options) = @_;
     my $self = {};
 
-    $self->{'transcript'} = $options{'transcript'} ? $options{'transcript'} : "tamperdata.xml";
+    if ($options{'transcript'}) {
+            $self->{'transcript'} = $options{'transcript'};
+            $_tamperxml = XMLin($self->{'transcript'});
+    }
+    
     $self->{'timeout'}    = $options{'timeout'} ? $options{'timeout'} : 60;
 
-    $_tamperxml = XMLin($self->{'transcript'});
+    if ($options{'requestfilter'}) {
+        $self->{requestfilter}->{module} = caller;
+        $self->{requestfilter}->{function} = $options{'requestfilter'};
+    }
+    
+    if ($options{'responsefilter'}) {
+        $self->{responsefilter}->{module} = caller;
+        $self->{responsefilter}->{function} = $options{'responsefilter'};
+    }
+
     $_tamperagent = LWP::UserAgent->new;
     $_tamperagent->timeout($self->{'timeout'});
     return bless $self, $class;
@@ -78,54 +93,42 @@ sub replay {
     my $self = shift;
     if (ref($_tamperxml->{tdRequest}) eq 'ARRAY') {
         for my $x (0..scalar($_tamperxml->{tdRequest})) {
-        #    $_tamperxml->{tdRequest}->[$x]->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-        #    my $request = HTTP::Request->new($_tamperxml->{tdRequest}->[$x]->{tdRequestMethod} => "$_tamperxml->{tdRequest}->[$x]->{uri}");
-        #    my $response = $_tamperagent->get($request);
-        #    if (!$response->is_success) {
-        #        croak $response->status_line;
-        #    }
         $self->_make_request($_tamperxml->{tdRequest}->[$x]);
 
         }
     } else {
-        #$_tamperxml->{tdRequest}->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-        #my $request = HTTP::Request->new($_tamperxml->{tdRequest}->{tdRequestMethod} => "$_tamperxml->{tdRequest}->{uri}");
-        #my $response = $_tamperagent->get($request);
-        #if (!$response->is_success) {
-        #    croak $response->status_line;
-        #}
         $self->_make_request($_tamperxml->{tdRequest});
     }
 }
 
-=head2 request_filter
+=head2 requestfilter
 
 Callback function that allows inspection/tampering of the uri and parameters before the request is performed.
 
 =cut
 
-sub request_filter {
+sub requestfilter {
     my ($self, $callback) = @_;
-    $self->{request_filter}->{module} = caller;
-    $self->{request_filter}->{function} = $callback;
+    $self->{requestfilter}->{module} = caller;
+    $self->{requestfilter}->{function} = $callback;
 }
 
-=head2 response_filter
+=head2 responsefilter
 
 Callback function that allows inspection of the response object.
 
 =cut
 
-sub response_filter {
+sub responsefilter {
     my ($self, $callback) = @_;
-    $self->{response_filter}->{module} = caller;
-    $self->{response_filter}->{function} = $callback;
+    $self->{responsefilter}->{module} = caller;
+    $self->{responsefilter}->{function} = $callback;
 }
 
 sub _make_request {
     my ($self, $uriobj) = @_;
-    if ($self->{request_filter}) {
-        eval "$self->{request_filter}->{module}::$self->{request_filter}->{function}(\$uriobj);";
+    if ($self->{requestfilter}) {
+        eval "$self->{requestfilter}->{module}::$self->{requestfilter}->{function}(\$uriobj);";
     }
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
@@ -134,8 +137,8 @@ sub _make_request {
         $request->push_header($header => $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content});
     }
     my $response = $_tamperagent->request($request);
-    if ($self->{response_filter}) {
-        eval "$self->{response_filter}->{module}::$self->{response_filter}->{function}(\$uriobj);";
+    if ($self->{responsefilter}) {
+        eval "$self->{responsefilter}->{module}::$self->{responsefilter}->{function}(\$uriobj);";
     }
     if (!$response->is_success) {
         croak $response->status_line;

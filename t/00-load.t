@@ -4,7 +4,7 @@ use Test::More tests => 2;
 
 BEGIN {
 	use_ok( 'WWW::TamperData' );
-    my $obj = WWW::TamperData->new(transcript => 't/test1.xml');
+    my $obj = WWW::TamperData->new;
     isa_ok( $obj, 'WWW::TamperData' );
 }
 

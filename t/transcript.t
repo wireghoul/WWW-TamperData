@@ -17,6 +17,6 @@ sub response_hook {
 
 
 my $obj = WWW::TamperData->new(transcript => 't/test1.xml');
-ok( $obj->request_filter('request_hook'));
-ok( $obj->response_filter('response_hook'));
+ok( $obj->requestfilter('request_hook'));
+ok( $obj->responsefilter('response_hook'));
 ok( $obj->replay() );
