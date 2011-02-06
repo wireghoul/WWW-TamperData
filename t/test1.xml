@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<!-- Export of tamperdata transacions -->
+<!-- Export of tamperdata transactions -->
 <tdRequests>
 <tdRequest uri="http%3A//www.justanotherhacker.com/cgi-bin/env.cgi"><tdStartTime>21:28:53.465</tdStartTime>
 <tdStartTimeMS>1241004533465</tdStartTimeMS>

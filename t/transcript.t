@@ -8,11 +8,14 @@ use WWW::TamperData;
 sub request_hook {
     my $arg = shift;
     $arg->{tdRequestHeaders}->{tdRequestHeader}->{'User-Agent'}->{content} = 'WWW::TamperData';
+    warn "Request hook\n";
     warn Dumper($arg);
 }
 
 sub response_hook {
     my $arg = shift;
+    warn "Response hook";
+    warn Dumper($arg);
 }
 
 
