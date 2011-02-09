@@ -138,7 +138,7 @@ sub _make_request {
     }
     my $response = $_tamperagent->request($request);
     if ($self->{responsefilter}) {
-        eval "$self->{responsefilter}->{module}::$self->{responsefilter}->{function}(\$uriobj);";
+        eval "$self->{responsefilter}->{module}::$self->{responsefilter}->{function}(\$uriobj, \$response);";
     }
     if (!$response->is_success) {
         croak $response->status_line;
