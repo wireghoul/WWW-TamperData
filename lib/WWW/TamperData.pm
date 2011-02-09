@@ -1,7 +1,7 @@
 package WWW::TamperData;
 
 use warnings;
-#use strict;
+use strict;
 use Carp;
 use XML::Simple;
 use HTTP::Request;
