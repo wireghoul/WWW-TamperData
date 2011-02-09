@@ -3,7 +3,7 @@
 use Test::More tests => 2;
 
 BEGIN {
-	use_ok( 'WWW::TamperData' );
+    use_ok( 'WWW::TamperData' );
     my $obj = WWW::TamperData->new;
     isa_ok( $obj, 'WWW::TamperData' );
 }
