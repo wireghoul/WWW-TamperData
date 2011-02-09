@@ -13,9 +13,9 @@ sub request_hook {
 }
 
 sub response_hook {
-    my $arg = shift;
+    my ($tdobj, $response) = shift;
     warn "Response hook";
-    warn Dumper($arg);
+    warn Dumper($response);
 }
 
 
