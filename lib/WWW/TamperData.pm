@@ -18,7 +18,7 @@ Version 0.09
 =cut
 
 # Globals
-our $VERSION = '0.1';
+our $VERSION = '0.09';
 our $AUTHOR = 'Eldar Marcussen - http://www.justanotherhacker.com';
 our $_tamperagent;
 our $_tamperxml;
@@ -45,12 +45,12 @@ Initializes the new object, it takes some options;
 
 =item WWW::TamperData->new(%options);
 
-    KEY             DEFAULT                 USE
-    -------         -----------------       ------------------------------------
-    transcript      undef                   Filename to read tamperdata xml from
-    timeout         60                      LWP connection timeout
-    requestfilter   undef                   Name of function to call before making the request
-    responsefilter  undef                   Name of function to call after making the request
+    KEY               DEFAULT                 USE
+    ---------------   -----------------       --------------------------------------------------
+    transcript        undef                   Filename to read tamperdata xml from
+    timeout           60                      LWP connection timeout
+    requestfilter     undef                   Name of function to call before making the request
+    responsefilter    undef                   Name of function to call after making the request
 
 =back
 
@@ -129,6 +129,7 @@ sub _make_request {
     my ($self, $uriobj) = @_;
     if ($self->{requestfilter}) {
         eval "$self->{requestfilter}->{module}::$self->{requestfilter}->{function}(\$uriobj);";
+        warn "Request filter errors:\n $@" if ($@);
     }
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
@@ -139,6 +140,7 @@ sub _make_request {
     my $response = $_tamperagent->request($request);
     if ($self->{responsefilter}) {
         eval "$self->{responsefilter}->{module}::$self->{responsefilter}->{function}(\$uriobj, \$response);";
+        warn "Response filter errors:\n $@\n" if ($@);
     }
     if (!$response->is_success) {
         croak $response->status_line;
