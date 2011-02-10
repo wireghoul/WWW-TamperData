@@ -1,5 +1,6 @@
 Revision history for WWW-TamperData
 0.09	2011 ???? ??
+	Request and Response hooks
 	Improved test suite
 	Correclty handles missing ppre-requisite modules
 
