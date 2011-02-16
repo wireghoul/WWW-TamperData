@@ -35,7 +35,7 @@ Replaying a file can be as simple as:
     my $foo = WWW::TamperData->new(transcript => "myfile.xml");
     my %data = $foo->replay();
 
-=head1 FUNCTIONS
+=head1 SUBROUTINES/METHODS
 
 =head2 new
 
@@ -135,7 +135,7 @@ sub _make_request {
     # TODO: Make this _process_request_filter() & support multiple filters
     if ($self->{requestfilter}) {
 	my $rqfclass = $self->{requestfilter}{module};
-        my $rqfmethod = $self->{requestfilter}{function}; 
+        my $rqfmethod = $self->{requestfilter}{function};
         eval { $rqfclass->$rqfmethod($uriobj); };
         carp "Request filter errors:\n $@" if ($@);
     }
@@ -172,7 +172,7 @@ sub _process_response_filter {
 
 Eldar Marcussen, C<< <japh at justanotherhacker.com> >>
 
-=head1 BUGS
+=head1 BUGS AND LIMITATIONS
 
 Please report any bugs or feature requests to C<bug-www-tamperdata at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=WWW-TamperData>.  I will be notified, and then you'll
@@ -208,7 +208,7 @@ L<http://search.cpan.org/dist/WWW-TamperData>
 =back
 
 
-=head1 COPYRIGHT & LICENSE
+=head1 LICENSE AND COPYRIGHT
 
 Copyright 2009 Eldar Marcussen, all rights reserved.
 
