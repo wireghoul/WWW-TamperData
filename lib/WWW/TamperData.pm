@@ -68,13 +68,13 @@ sub new {
     $self->{'timeout'}    = $options{'timeout'} ? $options{'timeout'} : 60;
 
     if ($options{'requestfilter'}) {
-        $self->{requestfilter}->{module} = caller;
-        $self->{requestfilter}->{function} = $options{'requestfilter'};
+        $self->{requestfilter}{module} = caller;
+        $self->{requestfilter}{function} = $options{'requestfilter'};
     }
     
     if ($options{'responsefilter'}) {
-        $self->{responsefilter}->{module} = caller;
-        $self->{responsefilter}->{function} = $options{'responsefilter'};
+        $self->{responsefilter}{module} = caller;
+        $self->{responsefilter}{function} = $options{'responsefilter'};
     }
 
     $_tamperagent = LWP::UserAgent->new;
@@ -109,8 +109,8 @@ Callback function that allows inspection/tampering of the uri and parameters bef
 
 sub requestfilter {
     my ($self, $callback) = @_;
-    $self->{requestfilter}->{module} = caller;
-    $self->{requestfilter}->{function} = $callback;
+    $self->{requestfilter}{module} = caller;
+    $self->{requestfilter}{function} = $callback;
 }
 
 =head2 responsefilter
@@ -121,25 +121,31 @@ Callback function that allows inspection of the response object.
 
 sub responsefilter {
     my ($self, $callback) = @_;
-    $self->{responsefilter}->{module} = caller;
-    $self->{responsefilter}->{function} = $callback;
+    $self->{responsefilter}{module} = caller;
+    $self->{responsefilter}{function} = $callback;
 }
 
 sub _make_request {
     my ($self, $uriobj) = @_;
+    # TODO: Make this _process_request_filter() & support multiple filters
     if ($self->{requestfilter}) {
-        eval "$self->{requestfilter}->{module}::$self->{requestfilter}->{function}(\$uriobj);";
+	my $rqfclass = $self->{requestfilter}{module};
+        my $rqfmethod = $self->{requestfilter}{function}; 
+        eval { $rqfclass->$rqfmethod(\$uriobj); };
         warn "Request filter errors:\n $@" if ($@);
     }
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
-    foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}->{tdRequestHeader} } )) {
-        $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-        $request->push_header($header => $uriobj->{tdRequestHeaders}->{tdRequestHeader}->{$header}->{content});
+    foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}{tdRequestHeader} } )) {
+        $uriobj->{tdRequestHeaders}{tdRequestHeader}{$header}{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+        $request->push_header($header => $uriobj->{tdRequestHeaders}{tdRequestHeader}{$header}{content});
     }
     my $response = $_tamperagent->request($request);
+    # TODO: Make this into _process_response_filter() & support multiple filters
     if ($self->{responsefilter}) {
-        eval "$self->{responsefilter}->{module}::$self->{responsefilter}->{function}(\$uriobj, \$response);";
+        my $rpfclass = $self->{responsefilter}{module};
+        my $rpfmethod = $self->{responsefilter}{function};
+        eval { $rpfclass->$rpfmethod(\$uriobj, \$response); };
         warn "Response filter errors:\n $@\n" if ($@);
     }
     if (!$response->is_success) {
