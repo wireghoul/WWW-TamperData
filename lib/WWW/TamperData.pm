@@ -99,6 +99,7 @@ sub replay {
     } else {
         $self->_make_request($_tamperxml->{tdRequest});
     }
+    return 1;
 }
 
 =head2 requestfilter
@@ -111,6 +112,7 @@ sub requestfilter {
     my ($self, $callback) = @_;
     $self->{requestfilter}{module} = caller;
     $self->{requestfilter}{function} = $callback;
+    return 1;
 }
 
 =head2 responsefilter
@@ -123,7 +125,10 @@ sub responsefilter {
     my ($self, $callback) = @_;
     $self->{responsefilter}{module} = caller;
     $self->{responsefilter}{function} = $callback;
+    return 1;
 }
+
+# Internal functions
 
 sub _make_request {
     my ($self, $uriobj) = @_;
@@ -131,28 +136,38 @@ sub _make_request {
     if ($self->{requestfilter}) {
 	my $rqfclass = $self->{requestfilter}{module};
         my $rqfmethod = $self->{requestfilter}{function}; 
-        eval { $rqfclass->$rqfmethod(\$uriobj); };
-        warn "Request filter errors:\n $@" if ($@);
+        eval { $rqfclass->$rqfmethod($uriobj); };
+        carp "Request filter errors:\n $@" if ($@);
     }
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
-    foreach my $header (keys( %{ $uriobj->{tdRequestHeaders}{tdRequestHeader} } )) {
-        $uriobj->{tdRequestHeaders}{tdRequestHeader}{$header}{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
-        $request->push_header($header => $uriobj->{tdRequestHeaders}{tdRequestHeader}{$header}{content});
+    my $request_headers = $uriobj->{tdRequestHeaders}{tdRequestHeader};
+    foreach my $header (keys( %{$request_headers} )) {
+        $request_headers->{$header}{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
+        $request->push_header($header => $request_headers->{$header}{content});
     }
     my $response = $_tamperagent->request($request);
     # TODO: Make this into _process_response_filter() & support multiple filters
     if ($self->{responsefilter}) {
         my $rpfclass = $self->{responsefilter}{module};
         my $rpfmethod = $self->{responsefilter}{function};
-        eval { $rpfclass->$rpfmethod(\$uriobj, \$response); };
-        warn "Response filter errors:\n $@\n" if ($@);
+        eval { $rpfclass->$rpfmethod($uriobj, $response); };
+        carp "Response filter errors:\n $@\n" if ($@);
     }
     if (!$response->is_success) {
         croak $response->status_line;
     }
     return $response;
 }
+
+sub _process_request_filter {
+}
+
+sub _process_response_filter {
+}
+
+
+
 =head1 AUTHOR
 
 Eldar Marcussen, C<< <japh at justanotherhacker.com> >>
