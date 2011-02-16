@@ -6,14 +6,14 @@ use WWW::TamperData;
 
 
 sub request_hook {
-    my ($self, $arg) = @_;
-    $arg->{tdRequestHeaders}->{tdRequestHeader}->{'User-Agent'}->{content} = 'WWW::TamperData-'.WWW::TamperData->VERSION;
+    my ($self, $td_hash) = @_;
+    $td_hash->{tdRequestHeaders}{tdRequestHeader}{'User-Agent'}{content} = 'WWW::TamperData-'.WWW::TamperData->VERSION;
     warn "Request hook\n";
-    warn Dumper($arg);
+    warn Dumper($td_hash);
 }
 
 sub response_hook {
-    my ($self, $tdobj, $response) = @_;
+    my ($self, $td_hash, $response) = @_;
     warn "Response hook\n";
     warn Dumper($response);
 }
