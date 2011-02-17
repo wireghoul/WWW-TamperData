@@ -1,8 +1,8 @@
 Revision history for WWW-TamperData
-0.09	2011 ???? ??
+0.09	2011 February 17
 	Request and Response hooks
 	Improved test suite
-	Correclty handles missing ppre-requisite modules
+	Correctly handles missing pre-requisite modules
 
 0.08    2009 June 18
         Fixed missing file in manifest that caused all tests to fail for 0.06 
