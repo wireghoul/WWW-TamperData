@@ -9,7 +9,7 @@ use LWP::UserAgent;
 
 =head1 NAME
 
-WWW::TamperData - Replay tamper data xml files
+WWW::TamperData - Replay tamper data XML files
 
 =head1 VERSION
 
@@ -25,15 +25,14 @@ our $_tamperxml;
 
 =head1 SYNOPSIS
 
-Tamperdata is a firefox extension that lets you intercept or inspect browser requests and the server responses. WWW::TamperData can replay
-requests exported to an xml file from tamperdata.
-
-Replaying a file can be as simple as:
-
     use WWW::TamperData;
 
     my $foo = WWW::TamperData->new(transcript => "myfile.xml");
     my %data = $foo->replay();
+
+=head1 DESCRIPTION
+Tamperdata is a firefox extension that lets you intercept or inspect browser requests and the server responses. WWW::TamperData can replay
+requests exported to an XML file from Tamperdata.
 
 =head1 SUBROUTINES/METHODS
 
@@ -92,7 +91,7 @@ This function will replay all the requests provided in the xml file in sequentia
 sub replay {
     my $self = shift;
     if (ref($_tamperxml->{tdRequest}) eq 'ARRAY') {
-        for my $x (0..scalar($_tamperxml->{tdRequest})) {
+        for my $x (0..scalar $_tamperxml->{tdRequest}) {
         $self->_make_request($_tamperxml->{tdRequest}->[$x]);
 
         }
@@ -142,7 +141,7 @@ sub _make_request {
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
     my $request_headers = $uriobj->{tdRequestHeaders}{tdRequestHeader};
-    foreach my $header (keys( %{$request_headers} )) {
+    foreach my $header (keys %{$request_headers} ) {
         $request_headers->{$header}{content} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
         $request->push_header($header => $request_headers->{$header}{content});
     }
