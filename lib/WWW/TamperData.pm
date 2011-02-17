@@ -31,8 +31,8 @@ our $_tamperxml;
     my %data = $foo->replay();
 
 =head1 DESCRIPTION
-Tamperdata is a firefox extension that lets you intercept or inspect browser requests and the server responses. WWW::TamperData can replay
-requests exported to an XML file from Tamperdata.
+Tamper Data is a Firefox extension that lets you intercept or inspect browser requests and the server responses. WWW::TamperData can replay
+requests exported to an XML file from Tamper Data.
 
 =head1 SUBROUTINES/METHODS
 
@@ -46,7 +46,7 @@ Initializes the new object, it takes some options;
 
     KEY               DEFAULT                 USE
     ---------------   -----------------       --------------------------------------------------
-    transcript        undef                   Filename to read tamperdata xml from
+    transcript        undef                   Filename to read Tamper Data XML from
     timeout           60                      LWP connection timeout
     requestfilter     undef                   Name of function to call before making the request
     responsefilter    undef                   Name of function to call after making the request
@@ -83,7 +83,7 @@ sub new {
 
 =head2 replay
 
-This function will replay all the requests provided in the xml file in sequential order.
+This function will replay all the requests provided in the XML file in sequential order.
 
 =cut
 
@@ -103,7 +103,7 @@ sub replay {
 
 =head2 requestfilter
 
-Callback function that allows inspection/tampering of the uri and parameters before the request is performed.
+Callback function that allows inspection/tampering of the URI and parameters before the request is performed.
 
 =cut
 
