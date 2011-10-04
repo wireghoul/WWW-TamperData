@@ -1,4 +1,9 @@
 Revision history for WWW-TamperData
+0.1     ???? ??? ??
+        Support for multiple response and request hooks
+        Support for gzip encoding
+	Changed replay test transcript
+
 0.09	2011 February 17
 	Request and Response hooks
 	Improved test suite

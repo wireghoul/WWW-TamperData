@@ -1,6 +1,6 @@
 #!perl -T
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 use Data::Dumper;
 use WWW::TamperData;
 
@@ -20,6 +20,8 @@ sub response_hook {
 
 
 my $obj = WWW::TamperData->new(transcript => 't/test1.xml');
-ok( $obj->requestfilter('request_hook'));
-ok( $obj->responsefilter('response_hook'));
+ok( $obj->add_request_filter('request_hook'));
+ok( $obj->add_response_filter('response_hook'));
+ok( $obj->replay() );
+$obj = WWW::TamperData->new(transcript => 't/404.xml');
 ok( $obj->replay() );

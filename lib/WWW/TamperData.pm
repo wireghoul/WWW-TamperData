@@ -13,15 +13,15 @@ WWW::TamperData - Replay tamper data XML files
 
 =head1 VERSION
 
-Version 0.09
+Version 0.1
 
 =cut
 
 # Globals
-our $VERSION = '0.09';
+our $VERSION = '0.1';
 our $AUTHOR = 'Eldar Marcussen - http://www.justanotherhacker.com';
-our $_tamperagent;
-our $_tamperxml;
+my $_tamperagent;
+my $_tamperxml;
 
 =head1 SYNOPSIS
 
@@ -44,12 +44,14 @@ Initializes the new object, it takes some options;
 
 =item WWW::TamperData->new(%options);
 
-    KEY               DEFAULT                 USE
-    ---------------   -----------------       --------------------------------------------------
-    transcript        undef                   Filename to read Tamper Data XML from
-    timeout           60                      LWP connection timeout
-    requestfilter     undef                   Name of function to call before making the request
-    responsefilter    undef                   Name of function to call after making the request
+    KEY                   DEFAULT                USE
+    -------------------   -----------------      --------------------------------------------------
+    transcript            undef                  Filename to read Tamper Data XML from
+    timeout               60                     LWP connection timeout
+    add_request_filter    undef                  Name of function to call before making the request
+    del_request_filter    undef                  Name of function to remove from the filter list
+    add_response_filter   undef                  Name of function to call after making the request
+    del_response_filter   undef                  Name of function to remove from the filter list
 
 =back
 
@@ -63,14 +65,14 @@ sub new {
             $self->{'transcript'} = $options{'transcript'};
             $_tamperxml = XMLin($self->{'transcript'});
     }
-    
+
     $self->{'timeout'}    = $options{'timeout'} ? $options{'timeout'} : 60;
 
     if ($options{'requestfilter'}) {
         $self->{requestfilter}{module} = caller;
         $self->{requestfilter}{function} = $options{'requestfilter'};
     }
-    
+
     if ($options{'responsefilter'}) {
         $self->{responsefilter}{module} = caller;
         $self->{responsefilter}{function} = $options{'responsefilter'};
@@ -87,7 +89,7 @@ This function will replay all the requests provided in the XML file in sequentia
 
 =cut
 
-#TODO: Add delay between requests
+# TODO: Add delay between requests
 sub replay {
     my $self = shift;
     if (ref($_tamperxml->{tdRequest}) eq 'ARRAY') {
@@ -101,43 +103,65 @@ sub replay {
     return 1;
 }
 
-=head2 requestfilter
+=head2 add_request_filter
 
-Callback function that allows inspection/tampering of the URI and parameters before the request is performed.
+Adds a callback function to the response filter queue, which allows inspection/tampering of the URI and parameters before the request is performed.
 
 =cut
 
-sub requestfilter {
+sub add_request_filter {
     my ($self, $callback) = @_;
     $self->{requestfilter}{module} = caller;
     $self->{requestfilter}{function} = $callback;
     return 1;
 }
 
-=head2 responsefilter
+=head2 add_response_filter
 
-Callback function that allows inspection of the response object.
+Adds a callback function that allows inspection of the response object.
 
 =cut
 
-sub responsefilter {
+sub add_response_filter {
     my ($self, $callback) = @_;
     $self->{responsefilter}{module} = caller;
     $self->{responsefilter}{function} = $callback;
     return 1;
 }
 
+=head2 del_request_filter
+
+Removes a callback function from the request filter queue.
+
+=cut
+
+sub del_request_filter {
+    my ($self, $callback) = @_;
+    $self->{requestfilter}{module} = caller;
+    $self->{requestfilter}{function} = $callback;
+    return 1;
+}
+
+=head2 del_response_filter
+
+Removes a callback function from the response filter queue.
+
+=cut
+
+sub del_response_filter {
+    my ($self, $callback) = @_;
+    $self->{responsefilter}{module} = caller;
+    $self->{responsefilter}{function} = $callback;
+    return 1;
+}
+
+
 # Internal functions
 
 sub _make_request {
     my ($self, $uriobj) = @_;
     # TODO: Make this _process_request_filter() & support multiple filters
-    if ($self->{requestfilter}) {
-	my $rqfclass = $self->{requestfilter}{module};
-        my $rqfmethod = $self->{requestfilter}{function};
-        eval { $rqfclass->$rqfmethod($uriobj); };
-        carp "Request filter errors:\n $@" if ($@);
-    }
+    $self->_process_request_filter($uriobj);
     $uriobj->{uri} =~ s/%([0-9A-F][0-9A-F])/pack("c",hex($1))/gei;
     my $request = HTTP::Request->new($uriobj->{tdRequestMethod} => "$uriobj->{uri}");
     my $request_headers = $uriobj->{tdRequestHeaders}{tdRequestHeader};
@@ -146,13 +170,7 @@ sub _make_request {
         $request->push_header($header => $request_headers->{$header}{content});
     }
     my $response = $_tamperagent->request($request);
-    # TODO: Make this into _process_response_filter() & support multiple filters
-    if ($self->{responsefilter}) {
-        my $rpfclass = $self->{responsefilter}{module};
-        my $rpfmethod = $self->{responsefilter}{function};
-        eval { $rpfclass->$rpfmethod($uriobj, $response); };
-        carp "Response filter errors:\n $@\n" if ($@);
-    }
+    $self->_process_response_filter($uriobj, $response);
     if (!$response->is_success) {
         croak $response->status_line;
     }
@@ -160,9 +178,25 @@ sub _make_request {
 }
 
 sub _process_request_filter {
+    my ($self, $uriobj) = @_;
+    if ($self->{requestfilter}) {
+        my $class = $self->{requestfilter}{module};
+        my $method = $self->{requestfilter}{function};
+        eval { $class->$method($uriobj); };
+        carp "Request filter errors:\n $@" if ($@);
+    }
+    return 1;
 }
 
 sub _process_response_filter {
+    my ($self, $uriobj, $response) = @_;
+    if ($self->{responsefilter}) {
+        my $class = $self->{responsefilter}{module};
+        my $method = $self->{responsefilter}{function};
+        eval { $class->$method($uriobj, $response); };
+        carp "Response filter errors:\n $@\n" if ($@);
+    }
+    return 1;
 }
 
 

@@ -4,7 +4,9 @@ Makefile.PL
 README
 lib/WWW/TamperData.pm
 t/00-load.t
+t/boilerplate.t
 t/pod-coverage.t
 t/pod.t
 t/test.t
 t/test1.xml
+t/transcript.t
