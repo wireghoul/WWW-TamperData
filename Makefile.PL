@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME                => 'WWW::TamperData',
-    AUTHOR              => 'Eldar Marcussen <marcussen@cpan.org>',
+    AUTHOR              => 'Eldar Marcussen <japh at justanotherhacker.com>',
     VERSION_FROM        => 'lib/WWW/TamperData.pm',
     ABSTRACT_FROM       => 'lib/WWW/TamperData.pm',
     PL_FILES            => {},
